@@ -217,6 +217,7 @@ class Target:
             self.r - 5
         )
         # FIXME
+
     
     def move(self):
         if self.x >= WIDTH - 10 or self.x <= 10:
@@ -236,7 +237,6 @@ class Target:
         #     self.time = pygame.time.get_ticks()
         #     self.vx = -self.vx 
         # FIXME    
-
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -312,4 +312,5 @@ while not finished:
             target2.new_target()
     gun.power_up()
 
+pass
 pygame.quit()
