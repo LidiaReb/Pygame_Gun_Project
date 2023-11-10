@@ -19,13 +19,34 @@ BLACK = (0, 0, 0)
 WHITE = 0xFFFFFF
 GREY = 0x7D7D7D
 ORANGE = 0xFF8C00
-BlACGREY = (165, 165, 165)
+BlACGREY =(165, 165, 165)
+TCOLOR = (150, 150, 150)
+LCOLOR = (150, 150, 150)
+POLCOLOR = (201, 201, 201)
+WHEELS = 0x7D7D7D
+
+# RED = 0xFF0000
+# BLUE = 0x0000FF
+# YELLOW = 0xFFC91F
+# LIGHTYELLOW = 0x9e0606
+# GREEN = 0x00FF00
+# MAGENTA = 0xFF03B8
+# CYAN = 0x00FFCC
+# BLACK = 0xFFFFFF
+# WHITE = (0, 0, 0)
+# BlACGREY = 0x7D7D7D
+# ORANGE = 0xFF8C00
+# GREY = (165, 165, 165)
+# TCOLOR = 0x7a7a7a
+
+
 # GAME_COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
-GAME_COLORS = [RED, ORANGE, YELLOW]
+GAME_COLORS = [ORANGE, YELLOW, (255, 93, 0), (255, 200, 0), (255, 153, 0), (255, 229, 0)]
 
 WIDTH = 800
 HEIGHT = 600
 GRAVITY = 120
+LINEY = HEIGHT*(1 - 0.17)
 
 COMMON = 1
 MEGA = 0
@@ -50,7 +71,6 @@ class Ball:
         self.birth = pygame.time.get_ticks()  
         self.balllivind = 2000
         self.gravity = GRAVITY
-
 
     def move(self):
         """Переместить мяч по прошествии единицы времени.
@@ -103,8 +123,8 @@ class MegaBall(Ball):
         self.multi = 10
 
     def boom(self):
-        self.r = 70
-        self.balllivind = 500
+        self.r = 90
+        self.balllivind = 300
         self.vx = 0
         self.vy = 0
         self.gravity = 0
@@ -118,7 +138,7 @@ class Gun:
         self.f2_on = 0
         self.an = 1
         self.color = GREY
-        self.x = 50
+        self.x = 40
         self.y = HEIGHT - 50
         self.len = 20
         self.wight = 10
@@ -139,7 +159,7 @@ class Gun:
         else:
             new_ball = MegaBall(self.screen)
         new_ball.r += 5
-        self.an = np.arctan2((event.pos[1]-new_ball.y), (event.pos[0]-new_ball.x))
+        self.an = np.arctan2((event.pos[1] - new_ball.y), (event.pos[0] - new_ball.x))
         new_ball.vx = 2 * self.f2_power * math.cos(self.an)
         new_ball.vy = 2 * self.f2_power * math.sin(self.an)
         new_ball.x = 20 + self.x + (self.f2_power + self.len) * math.cos(self.an)
@@ -154,7 +174,7 @@ class Gun:
     def targetting(self, event):
         """Прицеливание. Зависит от положения мыши."""
         if event:
-            self.an = np.arctan2((event.pos[1]-(self.y)), (event.pos[0]-self.x))
+            self.an = np.arctan2((event.pos[1]-self.y), (event.pos[0]-self.x))
         if self.f2_on:
             self.color = RED
         else:
@@ -167,7 +187,9 @@ class Gun:
             [self.x, self.y], 
             [self.x + (self.f2_power + self.len) * math.cos(self.an), self.y + (self.f2_power + self.len) * math.sin(self.an)], 
             self.wight)
-        pygame.draw.ellipse(screen, BlACGREY, (self.x - 20, self.y - 5, 30,20))
+        pygame.draw.ellipse(screen, BlACGREY, (self.x - 20, self.y - 5, 30, 20))
+        pygame.draw.circle(screen, WHEELS, (self.x + 10, self.y + 10), 8)
+        pygame.draw.circle(screen, WHEELS, (self.x - 20, self.y + 10), 8)
         # FIXME don't know how to do it
 
     def power_up(self):
@@ -195,9 +217,9 @@ class Target:
         self.time = pygame.time.get_ticks()
         self.vx = 100
         self.vy = 100
-        self.r_min = 10
-        self.r_max = 30
-        self.color = (150, 150, 150)
+        self.r_min = 7
+        self.r_max = 15
+        self.color = TCOLOR
         self.new_target()
 
     # self.points = 0
@@ -211,8 +233,8 @@ class Target:
         # y = self.y = rnd(300, 550)
         # r = self.r = rnd(2, 50) 
         self.live = 1
-        x = self.x = rd.uniform(600, 780)
-        y = self.y = rd.uniform(300, 550)
+        x = self.x = rd.uniform(500, WIDTH)
+        y = self.y = rd.uniform(300, LINEY)
         r = self.r = rd.uniform(self.r_min, self.r_max) 
         color = self.color
 
@@ -222,8 +244,7 @@ class Target:
 
     def draw(self):
         pygame.draw.circle(
-            self.screen,
-            BLACK,
+            self.screen, BLACK,
             (self.x, self.y),
             self.r
         )
@@ -231,7 +252,7 @@ class Target:
             self.screen,
             self.color,
             (self.x, self.y),
-            self.r - 5
+            self.r - 3
         )
         # FIXME
 
@@ -239,7 +260,7 @@ class Target:
     def move(self):
         if self.x >= WIDTH - 10 or self.x <= 10:
             self.vx = -self.vx 
-        if self.y <= 10 or self.y >= HEIGHT - 10:
+        if self.y <= 10 or self.y >= LINEY:
             self.vy = -self.vy
         self.x += self.vx*(1/FPS)
         self.y += self.vy*(1/FPS)
@@ -247,6 +268,15 @@ class Target:
             self.time = pygame.time.get_ticks()
             self.vy = self.vy*(1 + rd.uniform(-0.2, 0.23))
             self.vx = self.vx*(1 + rd.uniform(-0.2, 0.23))
+            if self.vy > 410:
+                self.vy = 400
+            if self.vy < -410:
+                self.vy = -400
+            if self.vx > 410:
+                self.vx = 400
+            if self.vx < -410:
+                self.vx = -400
+
         # if pygame.time.get_ticks() - self.time > 500:
         #     self.time = pygame.time.get_ticks()
         #     self.vx = self.vx*(1 + rd.uniform(-0.2, 0.2))
@@ -259,14 +289,26 @@ class MegaTarget(Target):
 
     def __init__(self, screen: pygame.Surface):
         self.r_min = 5
-        self.r_max = 15
+        self.r_max = 10
         super().__init__(screen)
-        self.goingx = rd.uniform( 50, WIDTH - 50)
-        self.goingy = rd.uniform( 50, HEIGHT - 50)
+        self.b = 1
         self.color = BLACK
-        self.vx = 1 * (self.goingx - self.x)
-        self.vy = 1 * (self.goingy - self.y)
-        v = 400 * rd.uniform(1, 2)
+        self.b = 1
+        self.v = 400
+        self.new_megatarget()
+        self.r = rd.uniform(self.r_min, self.r_max)
+    
+    def new_megatarget(self):
+        self.live = 1
+        # x = self.x = rd.uniform(600, 780)
+        # y = self.y = rd.uniform(300, 550)
+        # r = self.r = rd.uniform(self.r_min, self.r_max) 
+        x = self.x = WIDTH
+        y = self.y = rd.uniform(0, HEIGHT - 300)
+        r = self.r = 30
+        self.goingx = rd.uniform( 50, WIDTH - 50)
+        self.goingy = self.y + rd.uniform( 50 - self.y, HEIGHT - 50 - self.y)*self.b
+        v = self.v * rd.uniform(1, 2)
         self.vx = v * (self.goingx - self.x) / ((self.goingx-self.x)**2 + (self.goingy - self.y)**2)**0.5
         self.vy = v * (self.goingy - self.y) / ((self.goingx-self.x)**2 + (self.goingy - self.y)**2)**0.5
     
@@ -279,10 +321,10 @@ class MegaTarget(Target):
         self.y += self.vy*(1/FPS)
         if (self.x - self.goingx)**2 + (self.y - self.goingy)**2  < (self.r)**2:
             self.goingx = rd.uniform( 50, WIDTH - 50)
-            self.goingy = rd.uniform( 50, HEIGHT - 50)
+            self.goingy = self.y + rd.uniform( 50 - self.y, LINEY - self.y)*self.b
             self.vx = 1 * (self.goingx - self.x)
             self.vy = 1 * (self.goingy - self.y)
-            v = 400 * rd.uniform(1, 2)
+            v = self.v * rd.uniform(1, 2)
             self.vx = v * (self.goingx - self.x) / ((self.goingx-self.x)**2 + (self.goingy - self.y)**2)**0.5
             self.vy = v * (self.goingy - self.y) / ((self.goingx-self.x)**2 + (self.goingy - self.y)**2)**0.5
 
@@ -302,6 +344,25 @@ class MegaTarget(Target):
         self.vx = v * (self.goingx - self.x) / ((self.goingx-self.x)**2 + (self.goingy - self.y)**2)**0.5
         self.vy = v * (self.goingy - self.y) / ((self.goingx-self.x)**2 + (self.goingy - self.y)**2)**0.5
 
+class BoomTarget(MegaTarget):
+    def __init__(self, screen: pygame.Surface):
+        self.r_max = 20
+        self.r_min = 20
+        super().__init__(screen)
+        self.b = 0
+        self.v = 50
+        self.color = BlACGREY
+        self.new_megatarget()
+
+    def draw(self):
+        pygame.draw.polygon(screen, RED, 
+                [[self.x - self.r, self.y], [self.x, self.y + self.r/2], 
+                [self.x + self.r, self.y]])
+        pygame.draw.polygon(screen, BLACK, 
+                [[self.x - self.r*0.75, self.y], [self.x, self.y + self.r*0.75/2], 
+                [self.x + self.r*0.75, self.y]])
+
+
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 bullet = 0
@@ -316,11 +377,12 @@ gun = Gun(screen)
 target1 = Target(screen)
 target2 = Target(screen)
 target3 = MegaTarget(screen)
+target4 = BoomTarget(screen)
+target5 = BoomTarget(screen)
 finished = False
 
 while not finished:
     screen.fill(WHITE)
-    gun.draw()
     if target1.live:
         target1.draw()
         target1.move()
@@ -330,11 +392,26 @@ while not finished:
     if target3.live:
         target3.draw()
         target3.move()
-
+    if target4.live:
+        target4.draw()
+        target4.move()
+    if target5.live:
+        target5.draw()
+        target5.move()
 
     font = pygame.font.SysFont(None, 24)
-    img = font.render('Балл: ' + str(target1.points + target2.points +  target3.points - fine), True, 0)
+    img = font.render('Балл: ' + str(target1.points + target2.points +  target3.points - fine), True, BLACK)
     screen.blit(img, (20, 20))
+
+    for i in range(0, WIDTH + 100, 15):
+        pygame.draw.line(screen, LCOLOR, [i-6.5, LINEY-5], [i, LINEY-5], 2)
+
+    pygame.draw.polygon(screen, POLCOLOR, 
+                    [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, HEIGHT-37], [0, HEIGHT-37]])
+    gun.draw()
+
+    for b in balls + megaballs:
+        b.draw()
 
     if pygame.time.get_ticks() - texttime < 500 and pr:
         font1 = pygame.font.SysFont(None, 40)
@@ -343,8 +420,6 @@ while not finished:
         img1 = font1.render('Нет баллов для взрыва', True, clr)
         screen.blit(img1, (WIDTH/2 - 160, HEIGHT/2 - 50))  
 
-    for b in balls + megaballs:
-        b.draw()
     pygame.display.update()
 
     kill = []
@@ -409,6 +484,14 @@ while not finished:
             target3.live = 0
             target3.hit()
             target3.new_target()
+
+        if b.hittest(target4) and target4.live:
+            target4.live = 0
+            target4.new_megatarget()
+
+        if b.hittest(target5) and target5.live:
+            target5.live = 0
+            target5.new_megatarget()
     gun.power_up()
 
 pygame.quit()
