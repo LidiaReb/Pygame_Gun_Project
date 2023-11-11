@@ -46,7 +46,10 @@ GAME_COLORS = [ORANGE, YELLOW, (255, 93, 0), (255, 200, 0), (255, 153, 0), (255,
 WIDTH = 800
 HEIGHT = 600
 GRAVITY = 120
-LINEY = HEIGHT*(1 - 0.17)
+LINEY = HEIGHT - 100
+TATTACKTLONG = 500
+TATTACKTSHORT = 50
+MEGABOOM = 30
 
 COMMON = 1
 MEGA = 0
@@ -96,7 +99,11 @@ class Ball:
             self.r
         )
 
-    def killing(self):
+    def killing(self, which):
+        # global boom
+        # if self.r > 50:
+        #     print(boom)
+        #     boom -= 1
         if pygame.time.get_ticks() - self.birth > self.balllivind:
             return True
         return False
@@ -124,12 +131,12 @@ class MegaBall(Ball):
 
     def boom(self):
         self.r = 90
-        self.balllivind = 300
+        self.birth = pygame.time.get_ticks()
+        self.balllivind = MEGABOOM
         self.vx = 0
         self.vy = 0
         self.gravity = 0
         self.color = LIGHTYELLOW
-
 
 class Gun:
     def __init__(self, screen):
@@ -362,15 +369,57 @@ class BoomTarget(MegaTarget):
                 [[self.x - self.r*0.75, self.y], [self.x, self.y + self.r*0.75/2], 
                 [self.x + self.r*0.75, self.y]])
 
+    def startattact(self):
+        global attacks
+        new_attackt = Attackt(self.screen)
+        new_attackt.vx = self.vx
+        new_attackt.vy = 0
+        attacks.append(new_attackt)
+
+class Attackt(BoomTarget):
+    def __init__(self, screen):
+        self.screen = screen
+        super().__init__(screen)
+        self.r = 3
+        self.coror = RED
+        self.vx = 0
+        self.vy = 0
+
+    def move(self):
+        if self.x >= WIDTH - 10 or self.x <= 10:
+            self.vx = -self.vx 
+        if self.y >= HEIGHT - 10:
+            self.vy = -self.vy
+        self.x += self.multi*self.vx*(1/FPS)
+        self.y += self.multi*self.vy*(1/FPS) - self.gravity*(1/FPS)**2
+        self.vy += self.gravity*(1/FPS)
+
+    def draw(self):
+        pygame.draw.circle(
+            self.screen,
+            self.color,
+            (self.x, self.y),
+            self.r
+        )
+
+    def hittest(self, obj):
+        global game
+        if (self.x - obj.x)**2 + (self.y - obj.y)**2  < (self.r  + 25)**2:
+            game = 0
+
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 bullet = 0
 fine = 0
 balls = []
+attacks = []
 megaballs =[]
 texttime = 0
 pr = 0
+st = 0
+game = 2
+boom = 0
 
 clock = pygame.time.Clock()
 gun = Gun(screen)
@@ -381,117 +430,151 @@ target4 = BoomTarget(screen)
 target5 = BoomTarget(screen)
 finished = False
 
+attacktlong = pygame.time.get_ticks()
+attacktshort = pygame.time.get_ticks()
+
 while not finished:
     screen.fill(WHITE)
-    if target1.live:
-        target1.draw()
-        target1.move()
-    if target2.live:
-        target2.draw()
-        target2.move()
-    if target3.live:
-        target3.draw()
-        target3.move()
-    if target4.live:
-        target4.draw()
-        target4.move()
-    if target5.live:
-        target5.draw()
-        target5.move()
+    if game:
+        if target1.live:
+            target1.draw()
+            target1.move()
+        if target2.live:
+            target2.draw()
+            target2.move()
+        if target3.live:
+            target3.draw()
+            target3.move()
+        if target4.live:
+            target4.draw()
+            target4.move()
+        if target5.live:
+            target5.draw()
+            target5.move()
 
-    font = pygame.font.SysFont(None, 24)
-    img = font.render('Балл: ' + str(target1.points + target2.points +  target3.points - fine), True, BLACK)
-    screen.blit(img, (20, 20))
+        font = pygame.font.SysFont(None, 24)
+        img = font.render('Балл: ' + str(target1.points + target2.points +  target3.points - fine), True, BLACK)
+        screen.blit(img, (20, 20))
 
-    for i in range(0, WIDTH + 100, 15):
-        pygame.draw.line(screen, LCOLOR, [i-6.5, LINEY-5], [i, LINEY-5], 2)
+        for i in range(0, WIDTH + 100, 15):
+            pygame.draw.line(screen, LCOLOR, [i-6.5, LINEY-5], [i, LINEY-5], 2)
 
-    pygame.draw.polygon(screen, POLCOLOR, 
-                    [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, HEIGHT-37], [0, HEIGHT-37]])
-    gun.draw()
+        pygame.draw.polygon(screen, POLCOLOR, 
+                        [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, HEIGHT-37], [0, HEIGHT-37]])
+        gun.draw()
 
-    for b in balls + megaballs:
-        b.draw()
+        for b in balls + megaballs:
+            b.draw()
 
-    if pygame.time.get_ticks() - texttime < 500 and pr:
-        font1 = pygame.font.SysFont(None, 40)
-        m = int((pygame.time.get_ticks() - texttime) / 500 * 250)
-        clr = (m, m, m)
-        img1 = font1.render('Нет баллов для взрыва', True, clr)
-        screen.blit(img1, (WIDTH/2 - 160, HEIGHT/2 - 50))  
+        for a in attacks:
+            a.draw()
 
-    pygame.display.update()
+        if pygame.time.get_ticks() - texttime < 500 and pr:
+            font1 = pygame.font.SysFont(None, 40)
+            m = int((pygame.time.get_ticks() - texttime) / 500 * 250)
+            clr = (m, m, m)
+            img1 = font1.render('Нет баллов для взрыва', True, clr)
+            screen.blit(img1, (WIDTH/2 - 160, HEIGHT/2 - 50))  
 
-    kill = []
-    for i in range(len(balls)):
-        if balls[i].killing():
-            kill.append(i)
-    for i in kill:
-        del balls[i]
-    kill = []
-    for i in range(len(megaballs)):
-        if megaballs[i].killing():
-            kill.append(i)
-    for i in kill:
-        del megaballs[i]
+        if pygame.time.get_ticks() - attacktlong > TATTACKTLONG:
+            ph = 1
+            target4.startattact()
+            attacktlong = pygame.time.get_ticks()
 
-    clock.tick(FPS)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            finished = True
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            left, middle, right = pygame.mouse.get_pressed()
-            gun.fire2_start(event)
-            if left:
-                whball = MEGA
-            if right:
-                whball = COMMON
-        elif event.type == pygame.MOUSEBUTTONUP:
-            gun.fire2_end(event, whball)
-        elif event.type == pygame.MOUSEMOTION:
-            gun.targetting(event)
+        pygame.display.update()
 
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and len(megaballs) != 0 and target1.points + target2.points + target3.points - fine == 0:
-            texttime = pygame.time.get_ticks()
-            pr = 1
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                finished = True
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                left, middle, right = pygame.mouse.get_pressed()
+                gun.fire2_start(event)
+                if left:
+                    whball = MEGA
+                if right:
+                    whball = COMMON
+            elif event.type == pygame.MOUSEBUTTONUP:
+                gun.fire2_end(event, whball)
+            elif event.type == pygame.MOUSEMOTION:
+                gun.targetting(event)
 
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and len(megaballs) != 0 and target1.points + target2.points + target3.points - fine > 0:
-            megaballs[0].boom()
-            fine += 1
-    
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_d]:
-        gun.move(2)
-    elif keys[pygame.K_a]:
-        gun.move(-2)
-    else:
-        gun.move(0)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and len(megaballs) != 0 and target1.points + target2.points + target3.points - fine == 0:
+                texttime = pygame.time.get_ticks()
+                pr = 1
 
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and len(megaballs) != 0 and target1.points + target2.points + target3.points - fine > 0:
+                megaballs[boom].boom()
+                if boom < len(megaballs) - 1:
+                    boom += 1
+                fine += 1
+        
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_d]:
+            gun.move(2)
+        elif keys[pygame.K_a]:
+            gun.move(-2)
+        else:
+            gun.move(0)
 
-    for b in balls + megaballs:
-        b.move()
-        if b.hittest(target1) and target1.live:
-            target1.live = 0
-            target1.hit()
-            target1.new_target()
+        for b in balls + megaballs:
+            b.move()
+            if b.hittest(target1) and target1.live:
+                target1.live = 0
+                target1.hit()
+                target1.new_target()
 
-        if b.hittest(target2) and target2.live:
-            target2.live = 0
-            target2.hit()
-            target2.new_target()
+            if b.hittest(target2) and target2.live:
+                target2.live = 0
+                target2.hit()
+                target2.new_target()
 
-        if b.hittest(target3) and target3.live:
-            target3.live = 0
-            target3.hit()
-            target3.new_target()
+            if b.hittest(target3) and target3.live:
+                target3.live = 0
+                target3.hit()
+                target3.new_target()
 
-        if b.hittest(target4) and target4.live:
-            target4.live = 0
-            target4.new_megatarget()
+            if b.hittest(target4) and target4.live:
+                target4.live = 0
+                target4.new_megatarget()
 
-        if b.hittest(target5) and target5.live:
-            target5.live = 0
-            target5.new_megatarget()
-    gun.power_up()
+            if b.hittest(target5) and target5.live:
+                target5.live = 0
+                target5.new_megatarget()
+
+        for a in attacks:
+            if a.hittest(gun):
+                game = 0
+
+        gun.power_up()
+
+        kill = []
+        for i in range(len(balls)):
+            if balls[i].killing(COMMON):
+                kill.append(i)
+        for i in kill:
+            del balls[i]
+            
+        kill = []
+        for i in range(len(megaballs)):
+            if megaballs[i].killing(MEGA):
+                kill.append(i)
+        for i in kill:
+            if megaballs[i].r > 50:
+                boom -= 1
+            del megaballs[i]
+
+    else:  
+        font4 = pygame.font.SysFont(None, 24)
+        img4 = font4.render('GAME OVER', True, BLACK)
+        screen.blit(img4, (20, 20))
+
+        for event in pygame.event.get():                               
+            if event.type == pygame.QUIT:
+                finished = True
+            if event.type == pygame.KEYDOWN:
+                finished = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                finished = True
 
 pygame.quit()
