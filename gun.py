@@ -47,9 +47,10 @@ WIDTH = 800
 HEIGHT = 600
 GRAVITY = 120
 LINEY = HEIGHT - 100
-TATTACKTLONG = 500
-TATTACKTSHORT = 50
+TATTACKTLONG = 2500
+TATTACKTSHORT = 100
 MEGABOOM = 30
+ATTACTLIFE = 4000
 
 COMMON = 1
 MEGA = 0
@@ -371,25 +372,30 @@ class BoomTarget(MegaTarget):
 
     def startattact(self):
         global attacks
-        new_attackt = Attackt(self.screen)
-        new_attackt.vx = self.vx
+        new_attackt = Attackt(self.screen, self.x, self.y)
+        new_attackt.vx = self.vx*(1 + rd.uniform(-0.2, 0.2))
         new_attackt.vy = 0
         attacks.append(new_attackt)
 
-class Attackt(BoomTarget):
-    def __init__(self, screen):
+class Attackt():
+    def __init__(self, screen, x, y):
         self.screen = screen
-        super().__init__(screen)
         self.r = 3
-        self.coror = RED
-        self.vx = 0
+        self.color = RED
+        self.vx = rd.uniform(-0.1, 0.1)
         self.vy = 0
+        self.x = x
+        self.y = y + 12
+        self.gravity = GRAVITY
+        self.multi = 1
+        self.birth = pygame.time.get_ticks()
 
     def move(self):
         if self.x >= WIDTH - 10 or self.x <= 10:
             self.vx = -self.vx 
-        if self.y >= HEIGHT - 10:
-            self.vy = -self.vy
+        if self.y >= HEIGHT:
+            self.vy = -self.vy * 0.5
+            self.y = HEIGHT - 5
         self.x += self.multi*self.vx*(1/FPS)
         self.y += self.multi*self.vy*(1/FPS) - self.gravity*(1/FPS)**2
         self.vy += self.gravity*(1/FPS)
@@ -405,8 +411,14 @@ class Attackt(BoomTarget):
     def hittest(self, obj):
         global game
         if (self.x - obj.x)**2 + (self.y - obj.y)**2  < (self.r  + 25)**2:
-            game = 0
-
+            return True
+        else:
+            return False
+    
+    def killing(self):
+        if pygame.time.get_ticks() - self.birth > ATTACTLIFE:
+            return True
+        return False
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -416,10 +428,11 @@ balls = []
 attacks = []
 megaballs =[]
 texttime = 0
+texttime2 = 0
 pr = 0
-st = 0
-game = 2
+game = 10
 boom = 0
+minushealth = 0
 
 clock = pygame.time.Clock()
 gun = Gun(screen)
@@ -430,12 +443,49 @@ target4 = BoomTarget(screen)
 target5 = BoomTarget(screen)
 finished = False
 
-attacktlong = pygame.time.get_ticks()
-attacktshort = pygame.time.get_ticks()
+attacktlong4_1 = pygame.time.get_ticks() + rd.uniform(0, 1000)
+attacktlong4_2 = attacktlong4_1 + TATTACKTSHORT
+attacktlong4_3 = attacktlong4_2 + TATTACKTSHORT
+
+attacktlong5_1 = pygame.time.get_ticks()
+attacktlong5_2 = attacktlong5_1 + TATTACKTSHORT
+attacktlong5_3 = attacktlong5_2 + TATTACKTSHORT
 
 while not finished:
-    screen.fill(WHITE)
+
     if game:
+        screen.fill(WHITE)
+        font = pygame.font.SysFont(None, 26)
+        # Счёт
+        img = font.render('Счёт: ' + str(target1.points + target2.points +  target3.points - fine), True, BLACK)
+        screen.blit(img, (20, 50))
+        font0 = pygame.font.SysFont(None, 24)
+        # Жизнь
+        img0 = font0.render('Жизнь:  ' + str(game), True, BLACK)
+        screen.blit(img0, (20, 20))
+        # Прерывистая линия
+        for i in range(0, WIDTH + 100, 15):
+            pygame.draw.line(screen, LCOLOR, [i-6.5, LINEY-5], [i, LINEY-5], 2)
+        # Заполниный низ
+        pygame.draw.polygon(screen, POLCOLOR, 
+                        [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, HEIGHT-37], [0, HEIGHT-37]])
+        # Провода стреляющих мишеней
+        pygame.draw.line(screen, GREY, [0, target4.y + 5], [WIDTH, target4.y + 5], 1)
+        pygame.draw.line(screen, GREY, [0, target5.y + 5], [WIDTH, target5.y + 5], 1)
+        # Нет баллов для взрыва
+        if pygame.time.get_ticks() - texttime < 500 and pr:
+            font1 = pygame.font.SysFont(None, 40)
+            m = int((pygame.time.get_ticks() - texttime) / 500 * 250)
+            clr = (m, m, m)
+            img1 = font1.render('Нет баллов для взрыва', True, clr)
+            screen.blit(img1, (WIDTH/2 - 160, HEIGHT/2 - 50))  
+        # Нет баллов для взрыва
+        if pygame.time.get_ticks() - texttime2 < 500 and minushealth:
+            font6 = pygame.font.SysFont(None, 40)
+            m = int(100 + (pygame.time.get_ticks() - texttime2)/500 * 150)
+            clr = (250, m, m)
+            img6 = font6.render('Вас ранили', True, clr)
+            screen.blit(img6, (WIDTH/2 - 70, HEIGHT/2 - 50))  
         if target1.live:
             target1.draw()
             target1.move()
@@ -451,37 +501,33 @@ while not finished:
         if target5.live:
             target5.draw()
             target5.move()
-
-        font = pygame.font.SysFont(None, 24)
-        img = font.render('Балл: ' + str(target1.points + target2.points +  target3.points - fine), True, BLACK)
-        screen.blit(img, (20, 20))
-
-        for i in range(0, WIDTH + 100, 15):
-            pygame.draw.line(screen, LCOLOR, [i-6.5, LINEY-5], [i, LINEY-5], 2)
-
-        pygame.draw.polygon(screen, POLCOLOR, 
-                        [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, HEIGHT-37], [0, HEIGHT-37]])
         gun.draw()
-
         for b in balls + megaballs:
             b.draw()
-
         for a in attacks:
             a.draw()
 
-        if pygame.time.get_ticks() - texttime < 500 and pr:
-            font1 = pygame.font.SysFont(None, 40)
-            m = int((pygame.time.get_ticks() - texttime) / 500 * 250)
-            clr = (m, m, m)
-            img1 = font1.render('Нет баллов для взрыва', True, clr)
-            screen.blit(img1, (WIDTH/2 - 160, HEIGHT/2 - 50))  
-
-        if pygame.time.get_ticks() - attacktlong > TATTACKTLONG:
-            ph = 1
-            target4.startattact()
-            attacktlong = pygame.time.get_ticks()
-
         pygame.display.update()
+
+        if pygame.time.get_ticks() - attacktlong4_1> TATTACKTLONG:
+            target4.startattact()
+            attacktlong4_1 = pygame.time.get_ticks()
+        if pygame.time.get_ticks() - attacktlong4_2> TATTACKTLONG:
+            target4.startattact()
+            attacktlong4_2 = pygame.time.get_ticks()
+        if pygame.time.get_ticks() - attacktlong4_3> TATTACKTLONG:
+            target4.startattact()
+            attacktlong4_3 = pygame.time.get_ticks()
+
+        if pygame.time.get_ticks() - attacktlong5_1 > TATTACKTLONG:
+            target5.startattact()
+            attacktlong5_1 = pygame.time.get_ticks()
+        if pygame.time.get_ticks() - attacktlong5_2 > TATTACKTLONG:
+            target5.startattact()
+            attacktlong5_2 = pygame.time.get_ticks()
+        if pygame.time.get_ticks() - attacktlong5_3 > TATTACKTLONG:
+            target5.startattact()
+            attacktlong5_3 = pygame.time.get_ticks()
 
         clock.tick(FPS)
         for event in pygame.event.get():
@@ -543,8 +589,14 @@ while not finished:
                 target5.new_megatarget()
 
         for a in attacks:
-            if a.hittest(gun):
-                game = 0
+            a.move()
+        for i in range(len(attacks) - 1):
+            if attacks[i].hittest(gun):
+                game -= 1
+                minushealth = 1
+                texttime2 = pygame.time.get_ticks()
+                del attacks[i]
+
 
         gun.power_up()
 
@@ -563,11 +615,23 @@ while not finished:
             if megaballs[i].r > 50:
                 boom -= 1
             del megaballs[i]
+        kill = []
+        for i in range(len(attacks)):
+            if attacks[i].killing():
+                kill.append(i)
+        for i in kill:
+            del attacks[i]
 
     else:  
-        font4 = pygame.font.SysFont(None, 24)
-        img4 = font4.render('GAME OVER', True, BLACK)
-        screen.blit(img4, (20, 20))
+        screen.fill(BLACK)
+        font4 = pygame.font.SysFont("Calibri", 60)
+        img4 = font4.render('Игра окончена', True, (255, 0, 0))
+        screen.blit(img4, (WIDTH*0.275, HEIGHT*0.4))
+        font5 = pygame.font.SysFont(None, 24)
+        img5 = font5.render('Ваш счёт:  ' + str(target1.points + target2.points +  target3.points - fine), False, (255, 0, 0))
+        screen.blit(img5, (WIDTH*0.46, HEIGHT*0.5))
+
+        pygame.display.update()    
 
         for event in pygame.event.get():                               
             if event.type == pygame.QUIT:
