@@ -8,7 +8,7 @@ import pygame
 
 FPS = 100
 
-RED = 0xFF0000
+RED = (255, 0, 0)
 BLUE = 0x0000FF
 YELLOW = 0xFFC91F
 LIGHTYELLOW = 0xfffa69
@@ -16,14 +16,17 @@ GREEN = 0x00FF00
 MAGENTA = 0xFF03B8
 CYAN = 0x00FFCC
 BLACK = (0, 0, 0)
-WHITE = 0xFFFFFF
+WHITE = (255, 255, 255)
 GREY = 0x7D7D7D
 ORANGE = 0xFF8C00
 BlACGREY =(165, 165, 165)
 TCOLOR = (150, 150, 150)
 LCOLOR = (150, 150, 150)
 POLCOLOR = (201, 201, 201)
-WHEELS = 0x7D7D7D
+WHEELS = (125, 125, 125)
+BlACGREY_ATHER = (205, 205, 205)
+WHEELS_ATHER = (165, 165, 165)
+GREY_ATHER = (165, 165, 165)
 
 # RED = 0xFF0000
 # BLUE = 0x0000FF
@@ -51,9 +54,50 @@ TATTACKTLONG = 2500
 TATTACKTSHORT = 100
 MEGABOOM = 30
 ATTACTLIFE = 4000
+GAME = 10
 
 COMMON = 1
 MEGA = 0
+
+
+
+begginingtext =  "  Цель игры заработать как можно больше очков, сбивая мишени. \n \n" \
+"   Для этого у вас имеется два танка, для обоих из которых вы можете управлять \n"\
+"их перемещениями и стрельбой. \n"\
+"Перемешение производится кнопками: D - впрво, A - влево.\n"\
+"Выстрелы: ПРАВАЯ и ЛЕВАЯ КНОПКИ мыши для двух типов снарядов.\n"\
+"Переключение управления между танками: W - на воторой танк, S - обратно к первому.\n"\
+"Активный танк ярче неактивного.\n \n"\
+"   Типы выших снарядов:\n"\
+"ПРАВАЯ КНОПКА МЫШИ - большой, но медленый шар.\n"\
+"ЛЕВАЯ КНОПКА МЫШИ - маленький, быстрый шар, умеющий взрыватся, нажатием ПРОБЕЛА. Взрыв стоит 1 очко. Не имея очков вы не произведёте взрыв.\n \n" \
+"   Типы мишеней в игре:\n"\
+"Серые - медленные с предстказуемыми траекториями, дают +1 очко при сбивании. На поле - 2.\n"\
+"Черные - быстрые с меняющейся траекторией, дают +3 очка при сбивании. На поле - 1.\n"\
+"Треугольные - стреляют по вам отвтным огнем, не дают очков при сбивании. На поле - 2.\n \n"\
+"   Игра не бесконечная, у вас есть ограниченое количество жизней, которых первоначально " + str(GAME) + " штук.\n"\
+"Про истичении всех них игра заканчиваентся.\n"\
+"Жизни вы теряете, когда попадаетесь под огонь треугольных мишеней или попадаете своим снарядом в неактивный танк.\n \n"\
+"                                                На этом правила заканчиваются. Хорошей игры.\n"\
+"                                                             Нажмите любую кнопку, чтобы продолжить.\n"\
+
+def blit_text(surface, text, pos, font, color = BLACK):
+    words = [word.split(' ') for word in text.splitlines()] 
+    space = font.size(' ')[0]
+    max_width, max_height = surface.get_size()
+    x, y = pos
+    for line in words:
+        for word in line:
+            word_surface = font.render(word, True, color)
+            word_width, word_height = word_surface.get_size()
+            if x + word_width >= max_width:
+                x = pos[0]
+                y += word_height 
+            surface.blit(word_surface, (x, y))
+            x += word_width + space
+        x = pos[0]
+        y += word_height
+
 
 class Ball:
     def __init__(self, screen: pygame.Surface, x=40, y=450):
@@ -122,7 +166,13 @@ class Ball:
         else:
             return False
         # FIXME
-
+    
+    def hittesgun(self, obj):
+        if (self.x - obj.x)**2 + (self.y - obj.y)**2  < (self.r  + 25)**2:
+            return True
+        else:
+            return False
+        
 class MegaBall(Ball):
 
     def __init__(self, screen: pygame.Surface, x=40, y=450):
@@ -140,14 +190,13 @@ class MegaBall(Ball):
         self.color = LIGHTYELLOW
 
 class Gun:
-    def __init__(self, screen):
+    def __init__(self, screen, x, y):
         self.screen = screen
         self.f2_power = 10
         self.f2_on = 0
         self.an = 1
-        self.color = GREY
-        self.x = 40
-        self.y = HEIGHT - 50
+        self.x = x
+        self.y = HEIGHT - y
         self.len = 20
         self.wight = 10
 
@@ -188,16 +237,16 @@ class Gun:
         else:
             self.color = GREY
 
-    def draw(self):
+    def draw(self, c1, c2, c3):
         pygame.draw.line(
             self.screen,
-            self.color,
+            c1,
             [self.x, self.y], 
             [self.x + (self.f2_power + self.len) * math.cos(self.an), self.y + (self.f2_power + self.len) * math.sin(self.an)], 
             self.wight)
-        pygame.draw.ellipse(screen, BlACGREY, (self.x - 20, self.y - 5, 30, 20))
-        pygame.draw.circle(screen, WHEELS, (self.x + 10, self.y + 10), 8)
-        pygame.draw.circle(screen, WHEELS, (self.x - 20, self.y + 10), 8)
+        pygame.draw.ellipse(screen, c2, (self.x - 20, self.y - 5, 30, 20))
+        pygame.draw.circle(screen, c3, (self.x + 10, self.y + 10), 8)
+        pygame.draw.circle(screen, c3, (self.x - 20, self.y + 10), 8)
         # FIXME don't know how to do it
 
     def power_up(self):
@@ -429,13 +478,17 @@ attacks = []
 megaballs =[]
 texttime = 0
 texttime2 = 0
+texttime3 = 0
 pr = 0
-game = 10
+game = 0.5
 boom = 0
 minushealth = 0
+whichgun = 1
+hurtyurself = 0
 
 clock = pygame.time.Clock()
-gun = Gun(screen)
+gun1 = Gun(screen, 40, 50)
+gun2 = Gun(screen, WIDTH - 40, 50)
 target1 = Target(screen)
 target2 = Target(screen)
 target3 = MegaTarget(screen)
@@ -443,24 +496,50 @@ target4 = BoomTarget(screen)
 target5 = BoomTarget(screen)
 finished = False
 
-attacktlong4_1 = pygame.time.get_ticks() + rd.uniform(0, 1000)
+attacktlong4_1 = pygame.time.get_ticks() + rd.uniform(750, 1500)
 attacktlong4_2 = attacktlong4_1 + TATTACKTSHORT
 attacktlong4_3 = attacktlong4_2 + TATTACKTSHORT
 
-attacktlong5_1 = pygame.time.get_ticks()
+attacktlong5_1 = pygame.time.get_ticks() + rd.uniform(0, 750)
 attacktlong5_2 = attacktlong5_1 + TATTACKTSHORT
 attacktlong5_3 = attacktlong5_2 + TATTACKTSHORT
 
 while not finished:
-
-    if game:
+    if game == 0.5:
         screen.fill(WHITE)
-        font = pygame.font.SysFont(None, 26)
+        font8 = pygame.font.SysFont("Calibri", 40)
+        img8 = font8.render('Вы попали в "Игру в танки"', True, RED)
+        screen.blit(img8, (WIDTH*0.23, HEIGHT*0.05))
+        font10 = pygame.font.SysFont("Calibri", 30)
+        img10 = font10.render('Её правила просты:', True, BLACK)
+        screen.blit(img10, (WIDTH*0.35, HEIGHT*0.12))
+        font9 = pygame.font.SysFont("Calibri", 18)
+        blit_text(screen, begginingtext, (WIDTH*0.02, HEIGHT*0.2), font9)
+
+        pygame.display.update()
+
+        for event in pygame.event.get():                               
+            if event.type == pygame.QUIT:
+                finished = True
+            if event.type == pygame.KEYDOWN:
+                game = GAME
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                game = GAME
+
+    elif game:
+        if whichgun == 1:
+            gun = gun1
+            gun_ather = gun2
+        else:
+            gun = gun2
+            gun_ather = gun1
+        screen.fill(WHITE)
         # Счёт
+        font = pygame.font.SysFont(None, 26)
         img = font.render('Счёт: ' + str(target1.points + target2.points +  target3.points - fine), True, BLACK)
         screen.blit(img, (20, 50))
-        font0 = pygame.font.SysFont(None, 24)
         # Жизнь
+        font0 = pygame.font.SysFont(None, 24)
         img0 = font0.render('Жизнь:  ' + str(game), True, BLACK)
         screen.blit(img0, (20, 20))
         # Прерывистая линия
@@ -470,8 +549,8 @@ while not finished:
         pygame.draw.polygon(screen, POLCOLOR, 
                         [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, HEIGHT-37], [0, HEIGHT-37]])
         # Провода стреляющих мишеней
-        pygame.draw.line(screen, GREY, [0, target4.y + 5], [WIDTH, target4.y + 5], 1)
-        pygame.draw.line(screen, GREY, [0, target5.y + 5], [WIDTH, target5.y + 5], 1)
+        pygame.draw.line(screen, BlACGREY, [0, target4.y + 5], [WIDTH, target4.y + 5], 1)
+        pygame.draw.line(screen, BlACGREY, [0, target5.y + 5], [WIDTH, target5.y + 5], 1)
         # Нет баллов для взрыва
         if pygame.time.get_ticks() - texttime < 500 and pr:
             font1 = pygame.font.SysFont(None, 40)
@@ -479,13 +558,20 @@ while not finished:
             clr = (m, m, m)
             img1 = font1.render('Нет баллов для взрыва', True, clr)
             screen.blit(img1, (WIDTH/2 - 160, HEIGHT/2 - 50))  
-        # Нет баллов для взрыва
+        # Вас ранили
         if pygame.time.get_ticks() - texttime2 < 500 and minushealth:
             font6 = pygame.font.SysFont(None, 40)
             m = int(100 + (pygame.time.get_ticks() - texttime2)/500 * 150)
             clr = (250, m, m)
             img6 = font6.render('Вас ранили', True, clr)
-            screen.blit(img6, (WIDTH/2 - 70, HEIGHT/2 - 50))  
+            screen.blit(img6, (WIDTH/2 - 70, HEIGHT/2 - 50)) 
+        # Вы ранили себя
+        if pygame.time.get_ticks() - texttime3 < 500 and hurtyurself:
+            font7 = pygame.font.SysFont(None, 40)
+            m = int((pygame.time.get_ticks() - texttime3)/500 * 50)
+            clr = (250, 80 + m, m)
+            img7 = font7.render('Вы ранили себя', True, clr)
+            screen.blit(img7, (WIDTH*0.37, HEIGHT/2 - 50)) 
         if target1.live:
             target1.draw()
             target1.move()
@@ -501,7 +587,8 @@ while not finished:
         if target5.live:
             target5.draw()
             target5.move()
-        gun.draw()
+        gun_ather.draw(GREY_ATHER, BlACGREY_ATHER, WHEELS_ATHER)
+        gun.draw(GREY, BlACGREY, WHEELS)          
         for b in balls + megaballs:
             b.draw()
         for a in attacks:
@@ -562,6 +649,10 @@ while not finished:
             gun.move(-2)
         else:
             gun.move(0)
+        if keys[pygame.K_s]:
+            whichgun = 1
+        if keys[pygame.K_w]:
+            whichgun = 2
 
         for b in balls + megaballs:
             b.move()
@@ -588,15 +679,35 @@ while not finished:
                 target5.live = 0
                 target5.new_megatarget()
 
+
+            for k in range(len(attacks)):
+                # print('k', k, len(attacks))
+                if k < len(attacks):
+                    if b.hittest(attacks[k]):
+                        del attacks[k]   
+
+            if b.hittesgun(gun_ather) and b in balls:
+                game -= 1
+                del balls[balls.index(b)]
+                hurtyurself = 1
+                texttime3 = pygame.time.get_ticks()
+
+            if b.hittesgun(gun_ather) and b in megaballs:
+                game -= 1
+                del megaballs[megaballs.index(b)]
+                hurtyurself = 1
+                texttime3 = pygame.time.get_ticks()
+
         for a in attacks:
             a.move()
-        for i in range(len(attacks) - 1):
-            if attacks[i].hittest(gun):
-                game -= 1
-                minushealth = 1
-                texttime2 = pygame.time.get_ticks()
-                del attacks[i]
-
+        for j in range(len(attacks)):
+            # print('j ', j, len(attacks))
+            if j < len(attacks):
+                if attacks[j].hittest(gun):
+                    game -= 1
+                    minushealth = 1
+                    texttime2 = pygame.time.get_ticks()
+                    del attacks[j]
 
         gun.power_up()
 
@@ -628,7 +739,7 @@ while not finished:
         img4 = font4.render('Игра окончена', True, (255, 0, 0))
         screen.blit(img4, (WIDTH*0.275, HEIGHT*0.4))
         font5 = pygame.font.SysFont(None, 24)
-        img5 = font5.render('Ваш счёт:  ' + str(target1.points + target2.points +  target3.points - fine), False, (255, 0, 0))
+        img5 = font5.render('Ваш счёт:  ' + str(target1.points + target2.points +  target3.points - fine), False, RED)
         screen.blit(img5, (WIDTH*0.46, HEIGHT*0.5))
 
         pygame.display.update()    
