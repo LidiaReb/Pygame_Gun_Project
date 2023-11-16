@@ -144,8 +144,8 @@ class Ball:
         pygame.draw.circle(
             self.screen,
             self.color,
-            (self.x, self.y),
-            self.r
+            (int(self.x), int(self.y)),
+            int(self.r)
         )
 
     def killing(self, which):
@@ -245,12 +245,12 @@ class Gun:
         pygame.draw.line(
             self.screen,
             c1,
-            [self.x, self.y], 
-            [self.x + (self.f2_power + self.len) * math.cos(self.an), self.y + (self.f2_power + self.len) * math.sin(self.an)], 
-            self.wight)
-        pygame.draw.ellipse(screen, c2, (self.x - 20, self.y - 5, 30, 20))
-        pygame.draw.circle(screen, c3, (self.x + 10, self.y + 10), 8)
-        pygame.draw.circle(screen, c3, (self.x - 20, self.y + 10), 8)
+            [int(self.x), int(self.y)], 
+            [int(self.x + (self.f2_power + self.len) * math.cos(self.an)), int(self.y + (self.f2_power + self.len) * math.sin(self.an))], 
+            int(self.wight))
+        pygame.draw.ellipse(screen, c2, (int(self.x - 20), int(self.y - 5), 30, 20))
+        pygame.draw.circle(screen, c3, (int(self.x + 10), int(self.y + 10)), 8)
+        pygame.draw.circle(screen, c3, (int(self.x - 20), int(self.y + 10)), 8)
         # FIXME don't know how to do it
 
     def power_up(self):
@@ -306,14 +306,14 @@ class Target:
     def draw(self):
         pygame.draw.circle(
             self.screen, BLACK,
-            (self.x, self.y),
-            self.r
+            (int(self.x), int(self.y)),
+            int(self.r)
         )
         pygame.draw.circle(
             self.screen,
             self.color,
-            (self.x, self.y),
-            self.r - 3
+            (int(self.x), int(self.y)),
+            int(self.r - 3)
         )
         # FIXME
   
@@ -424,11 +424,11 @@ class BoomTarget(MegaTarget):
 
     def draw(self):
         pygame.draw.polygon(screen, RED, 
-                [[self.x - self.r, self.y], [self.x, self.y + self.r/2], 
-                [self.x + self.r, self.y]])
+                [[int(self.x - self.r), int(self.y)], [int(self.x), int(self.y + self.r/2)], 
+                [int(self.x + self.r), int(self.y)]])
         pygame.draw.polygon(screen, BLACK, 
-                [[self.x - self.r*0.75, self.y], [self.x, self.y + self.r*0.75/2], 
-                [self.x + self.r*0.75, self.y]])
+                [[int(self.x - self.r*0.75), int(self.y)], [int(self.x), int(self.y + self.r*0.75/2)], 
+                [int(self.x + self.r*0.75), int(self.y)]])
 
     def startattact(self):
         global attacks
@@ -468,8 +468,8 @@ class Attackt():
         pygame.draw.circle(
             self.screen,
             self.color,
-            (self.x, self.y),
-            self.r
+            (int(self.x), int(self.y)),
+            int(self.r)
         )
 
     def hittest(self, obj):
@@ -560,13 +560,13 @@ while not finished:
         screen.blit(img0, (20, 20))
         # Прерывистая линия
         for i in range(0, WIDTH + 100, 15):
-            pygame.draw.line(screen, LCOLOR, [i-6.5, LINEY-5], [i, LINEY-5], 2)
+            pygame.draw.line(screen, LCOLOR, [i-6, LINEY-5], [i, LINEY-5], 2)
         # Заполниный низ
         pygame.draw.polygon(screen, POLCOLOR, 
                         [[0, HEIGHT], [WIDTH, HEIGHT], [WIDTH, HEIGHT-37], [0, HEIGHT-37]])
         # Провода стреляющих мишеней
-        pygame.draw.line(screen, BlACGREY, [0, target4.y + 5], [WIDTH, target4.y + 5], 1)
-        pygame.draw.line(screen, BlACGREY, [0, target5.y + 5], [WIDTH, target5.y + 5], 1)
+        pygame.draw.line(screen, BlACGREY, [0, int(target4.y + 5)], [WIDTH, int(target4.y + 5)], 1)
+        pygame.draw.line(screen, BlACGREY, [0, int(target5.y + 5)], [WIDTH, int(target5.y + 5)], 1)
         # Нет баллов для взрыва
         if pygame.time.get_ticks() - texttime < 500 and pr:
             font1 = pygame.font.SysFont(None, 40)
