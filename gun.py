@@ -1,6 +1,5 @@
 import math
 import random as rd
-import choice
 import numpy as np
 
 import pygame
@@ -127,10 +126,15 @@ class Ball:
         self.x и self.y с учетом скоростей self.vx и self.vy, силы гравитации, действующей на мяч,
         и стен по краям окна (размер окна 800х600).
         """
-        if self.x >= WIDTH - 10 or self.x <= 10:
+        if self.x >= WIDTH - 10:
             self.vx = -self.vx 
+            self.x = WIDTH - 10
+        if self.x <= 10:
+            self.vx = -self.vx 
+            self.x = 10
         if self.y >= HEIGHT - 10:
             self.vy = -self.vy
+            self.y = HEIGHT - 10
         self.x += self.multi*self.vx*(1/FPS)
         self.y += self.multi*self.vy*(1/FPS) - self.gravity*(1/FPS)**2
         self.vy += self.gravity*(1/FPS)
@@ -212,9 +216,9 @@ class Gun:
         global balls, bullet
         bullet += 1
         if whichball:
-            new_ball = Ball(self.screen)
+            new_ball = Ball(self.screen, self.x, self.y)
         else:
-            new_ball = MegaBall(self.screen)
+            new_ball = MegaBall(self.screen, self.x, self.y)
         new_ball.r += 5
         self.an = np.arctan2((event.pos[1] - new_ball.y), (event.pos[0] - new_ball.x))
         new_ball.vx = 2 * self.f2_power * math.cos(self.an)
@@ -312,13 +316,20 @@ class Target:
             self.r - 3
         )
         # FIXME
-
-    
+  
     def move(self):
-        if self.x >= WIDTH - 10 or self.x <= 10:
+        if self.x >= WIDTH - 10:
             self.vx = -self.vx 
-        if self.y <= 10 or self.y >= LINEY:
+            self.x = WIDTH - 10
+        if self.x <= 10:
+            self.vx = -self.vx 
+            self.x = 10
+        if self.y <= 10:
             self.vy = -self.vy
+            self.y = 10
+        if self.y >= LINEY:
+            self.vy = -self.vy
+            self.y = LINEY
         self.x += self.vx*(1/FPS)
         self.y += self.vy*(1/FPS)
         if pygame.time.get_ticks() - self.time > 500:
@@ -363,8 +374,8 @@ class MegaTarget(Target):
         x = self.x = WIDTH
         y = self.y = rd.uniform(0, HEIGHT - 300)
         r = self.r = 30
-        self.goingx = rd.uniform( 50, WIDTH - 50)
-        self.goingy = self.y + rd.uniform( 50 - self.y, HEIGHT - 50 - self.y)*self.b
+        self.goingx = rd.uniform(50, WIDTH - 50)
+        self.goingy = self.y + rd.uniform( 50 - self.y, LINEY - 50 - self.y)*self.b
         v = self.v * rd.uniform(1, 2)
         self.vx = v * (self.goingx - self.x) / ((self.goingx-self.x)**2 + (self.goingy - self.y)**2)**0.5
         self.vy = v * (self.goingy - self.y) / ((self.goingx-self.x)**2 + (self.goingy - self.y)**2)**0.5
@@ -377,8 +388,8 @@ class MegaTarget(Target):
         self.x += self.vx*(1/FPS)
         self.y += self.vy*(1/FPS)
         if (self.x - self.goingx)**2 + (self.y - self.goingy)**2  < (self.r)**2:
-            self.goingx = rd.uniform( 50, WIDTH - 50)
-            self.goingy = self.y + rd.uniform( 50 - self.y, LINEY - self.y)*self.b
+            self.goingx = rd.uniform(50, WIDTH - 50)
+            self.goingy = self.y + rd.uniform(50 - self.y, LINEY - self.y)*self.b
             self.vx = 1 * (self.goingx - self.x)
             self.vy = 1 * (self.goingy - self.y)
             v = self.v * rd.uniform(1, 2)
@@ -440,11 +451,15 @@ class Attackt():
         self.birth = pygame.time.get_ticks()
 
     def move(self):
-        if self.x >= WIDTH - 10 or self.x <= 10:
+        if self.x >= WIDTH - 10:
             self.vx = -self.vx 
-        if self.y >= HEIGHT:
+            self.x = WIDTH - 10
+        if self.x <= 10:
+            self.vx = -self.vx 
+            self.x = 10
+        if self.y >= HEIGHT - 10:
             self.vy = -self.vy * 0.5
-            self.y = HEIGHT - 5
+            self.y = HEIGHT - 10
         self.x += self.multi*self.vx*(1/FPS)
         self.y += self.multi*self.vy*(1/FPS) - self.gravity*(1/FPS)**2
         self.vy += self.gravity*(1/FPS)
@@ -485,6 +500,7 @@ boom = 0
 minushealth = 0
 whichgun = 1
 hurtyurself = 0
+whball = -1
 
 clock = pygame.time.Clock()
 gun1 = Gun(screen, 40, 50)
@@ -627,7 +643,7 @@ while not finished:
                     whball = MEGA
                 if right:
                     whball = COMMON
-            elif event.type == pygame.MOUSEBUTTONUP:
+            elif event.type == pygame.MOUSEBUTTONUP and whball != -1:
                 gun.fire2_end(event, whball)
             elif event.type == pygame.MOUSEMOTION:
                 gun.targetting(event)
